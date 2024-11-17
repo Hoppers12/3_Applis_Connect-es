@@ -9,7 +9,9 @@ CORS(app)
 
 last_result = None
 
+
 @app.route('/compute', methods=['POST'])
+#Fonction qui fait le calcul et l'envoie au C# pour stockage
 def compute():
     global last_result
     if request.method == 'POST':
@@ -33,22 +35,24 @@ def compute():
         except Exception as e:
             return jsonify({"error": f"Problème lors du chargement des données JSON : {str(e)}"}), 400
 
+
+
 # Fonction pour récupérer toutes les valeurs stockées dans le service C#
+#Cette fonction sera appelé par le front pr l'affichage par la suite
 @app.route('/get-results-from-csharp', methods=['GET'])
 def get_results_from_csharp():
     url = "http://127.0.0.1:5225/get_results"  # URL du service C#
 
     try:
-        # Effectuer une requête GET pour récupérer les résultats
         response = requests.get(url)
-        response.raise_for_status()  # Vérifie si la requête a réussi
+        response.raise_for_status() 
 
         # Récupérer la réponse JSON
-        results = response.json()  # Parse la réponse JSON
-        return jsonify(results)  # Renvoyer les résultats en format JSON
+        results = response.json()  
+        return jsonify(results)   
         
     except requests.exceptions.RequestException as e:
-        # En cas d'erreur, renvoyer un message d'erreur
+ 
         return jsonify({"error": f"Erreur lors de la récupération des résultats : {str(e)}"}), 500
 
 
