@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+        async function fetchAllResult() {
+            try {
+                // Envoyer une requête GET à l'API pour récupérer les résultats
+                const response = await fetch("http://localhost:5000/get-results-from-csharp");
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des résultats.");
+                }
+
+                const data = await response.json();
+                if (data && Array.isArray(data)) {
+                    // Trouver l'entrée avec l'ID le plus grand
+                    let maxIdEntry = data.reduce((maxEntry, currentEntry) => {
+                        return currentEntry.Id > maxEntry.Id ? currentEntry : maxEntry;
+                    }, { Id: -Infinity });  // Valeur de départ avec un id minimal
+
+                    // Afficher l'entrée avec le plus grand ID
+                    document.getElementById("lastResult").innerText = 
+                        `Le dernier résultat est : ${maxIdEntry.ComputedResult}`;
+                } else {
+                    document.getElementById("lastResult").innerText = 
+                        "Aucun résultat disponible.";
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                document.getElementById("lastResult").innerText = 
+                    "Erreur lors de la récupération des résultats.";
+            }
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();  // Empêche le rechargement de la page
+
+            // Récupérer les valeurs du formulaire
+            const num1 = document.getElementById("num1").value;
+            const num2 = document.getElementById("num2").value;
+
+            // Créer l'objet pour les données à envoyer
+            const data = new FormData();
+            data.append("num1", num1);
+            data.append("num2", num2);
+
+            try {
+                // Envoyer les données via une requête POST
+                const response = await fetch("http://localhost:5000/compute", {
+                    method: "POST",
+                    body: data,
+                });
+
+                if (!response.ok) {
+                    throw new Error("Erreur lors de l'envoi des données.");
+                }
+
+                // Attendre la réponse JSON
+                const resultData = await response.json();
+
+                // Afficher le résultat du calcul dans la page
+                if (resultData.result !== undefined) {
+                    document.getElementById("lastResult").innerText = 
+                        `Le dernier résultat est : ${resultData.result}`;
+                } else {
+                    document.getElementById("lastResult").innerText = 
+                        "Erreur lors du calcul.";
+                }
+
+                // Mettre à jour l'affichage avec les résultats de C#
+                fetchAllResult();  // Appeler la fonction pour afficher le dernier résultat
+
+            } catch (error) {
+                console.error("Erreur:", error);
+                document.getElementById("lastResult").innerText = 
+                    "Erreur lors de l'envoi des données.";
+            }
+        }
+
+        // Appeler la fonction fetchAllResult() lors du chargement de la page
+        window.onload = fetchAllResult;
+    </script>
+</head>
+<body>
+    <h1>MON INTERFACE</h1>
+    <!-- Changer l'événement de soumission pour appeler `submitForm` avec preventDefault -->
+    <form id="calcForm" onsubmit="submitForm(event)">
+        <label for="num1">Nombre 1:</label>
+        <input type="number" id="num1" name="num1" required><br><br>
+
+        <label for="num2">Nombre 2:</label>
+        <input type="number" id="num2" name="num2" required><br><br>
+
+        <input type="submit" value="Envoyer">
+    </form>
+
+    <h2 id="lastResult">Le dernier résultat stocké en BDD est : </h2>
+</body>
+</html>
