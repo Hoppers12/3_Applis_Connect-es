@@ -43,25 +43,37 @@ public class Program
                                 // Lecture et désérialisation de la requête
                                 var requestBody = await new System.IO.StreamReader(context.Request.Body).ReadToEndAsync();
                                 var data = JsonConvert.DeserializeObject<dynamic>(requestBody);
+                                
+                                // Récupération de tab_result
+                                var tabResult = data.tab_result.ToObject<List<object>>();
+                                int result1 = Convert.ToInt32(tabResult[0]);
+                                bool isPair = Convert.ToBoolean(tabResult[1]);
+                                bool isPremier = Convert.ToBoolean(tabResult[2]);
+                                bool isParfait = Convert.ToBoolean(tabResult[3]);
+
+                                Console.WriteLine($"Result: {result1}, IsPair: {isPair}, IsPremier: {isPremier}, IsParfait: {isParfait}");
 
                                 using (var scope = app.ApplicationServices.CreateScope())
                                 {
                                     // Récupération du DbContext
                                     var dbContext = scope.ServiceProvider.GetRequiredService<ResultsDbContext>();
                                     
-                                    // Création d'une nouvelle entité Result
-                                    var result = new BDD.Models.Result
-                                    {
-                                        ComputedResult = (int)data.result,
-                                        Timestamp = DateTime.UtcNow
-                                    };
+                                // Création d'une nouvelle entité Result
+                                var result = new BDD.Models.Result
+                                {
+                                    ComputedResult = result1,  // Le résultat du calcul
+                                    IsPair = isPair,          // Ajout de la vérification si le nombre est pair
+                                    IsPremier = isPremier,    // Ajout de la vérification si le nombre est premier
+                                    IsParfait = isParfait,    // Ajout de la vérification si le nombre est parfait
+                                    Timestamp = DateTime.UtcNow  // Date et heure actuelles
+                                };
 
                                     // Ajout et sauvegarde dans la base de données
                                     dbContext.Results.Add(result);
                                     await dbContext.SaveChangesAsync();
                                 }
 
-                                Console.WriteLine($"Résultat reçu et sauvegardé : {data.result}");
+                                Console.WriteLine($"Résultat reçu et sauvegardé : {data.tab_result}");
 
                                 // Réponse au client
                                 context.Response.StatusCode = (int)HttpStatusCode.OK;
