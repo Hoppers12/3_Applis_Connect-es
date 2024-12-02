@@ -4,35 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <!-- Import Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <script>
-        async function fetchAllResult() {
-            try {
-                // Envoyer une requête GET à l'API pour récupérer les résultats
-                const response = await fetch("http://localhost:5000/get-results-from-csharp");
-                if (!response.ok) {
-                    throw new Error("Erreur lors de la récupération des résultats.");
-                }
 
-                const data = await response.json();
-                if (data && Array.isArray(data)) {
-                    // Trouver l'entrée avec l'ID le plus grand
-                    let maxIdEntry = data.reduce((maxEntry, currentEntry) => {
-                        return currentEntry.Id > maxEntry.Id ? currentEntry : maxEntry;
-                    }, { Id: -Infinity });  // Valeur de départ avec un id minimal
-
-                    // Afficher l'entrée avec le plus grand ID
-                    document.getElementById("lastResult").innerText = 
-                        `Le dernier résultat est : ${maxIdEntry.ComputedResult}`;
-                } else {
-                    document.getElementById("lastResult").innerText = 
-                        "Aucun résultat disponible.";
-                }
-            } catch (error) {
-                console.error("Erreur:", error);
-                document.getElementById("lastResult").innerText = 
-                    "Erreur lors de la récupération des résultats.";
-            }
-        }
 
         async function submitForm(event) {
             event.preventDefault();  // Empêche le rechargement de la page
@@ -59,18 +35,16 @@
 
                 // Attendre la réponse JSON
                 const resultData = await response.json();
-
+                console.log('result data : ', resultData);
                 // Afficher le résultat du calcul dans la page
                 if (resultData.result !== undefined) {
                     document.getElementById("lastResult").innerText = 
-                        `Le dernier résultat est : ${resultData.result}`;
+                        `Le résultat est : ${resultData.result}`;
                 } else {
                     document.getElementById("lastResult").innerText = 
                         "Erreur lors du calcul.";
                 }
 
-                // Mettre à jour l'affichage avec les résultats de C#
-                fetchAllResult();  // Appeler la fonction pour afficher le dernier résultat
 
             } catch (error) {
                 console.error("Erreur:", error);
@@ -83,19 +57,34 @@
         window.onload = fetchAllResult;
     </script>
 </head>
-<body>
-    <h1>MON INTERFACE</h1>
+<body class="bg-light">
 
-    <form id="calcForm" onsubmit="submitForm(event)">
-        <label for="num1">Nombre 1:</label>
-        <input type="number" id="num1" name="num1" required><br><br>
+    <div class="container mt-5">
 
-        <label for="num2">Nombre 2:</label>
-        <input type="number" id="num2" name="num2" required><br><br>
+        <!-- Titre -->
+        <h1 class="text-center mb-4">Calculatrice de Résultats</h1>
 
-        <input type="submit" value="Envoyer">
-    </form>
+        <!-- Formulaire -->
+        <form id="calcForm" onsubmit="submitForm(event)" class="bg-white p-4 rounded shadow-sm">
+            <div class="mb-3">
+                <label for="num1" class="form-label">Nombre 1:</label>
+                <input type="number" id="num1" name="num1" class="form-control" required>
+            </div>
 
-    <h2 id="lastResult">Le dernier résultat stocké en BDD est : </h2>
+            <div class="mb-3">
+                <label for="num2" class="form-label">Nombre 2:</label>
+                <input type="number" id="num2" name="num2" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Envoyer</button>
+        </form>
+
+        <!-- Résultat -->
+        <h2 id="lastResult" class="mt-4 text-center">Le dernier résultat stocké en BDD est : </h2>
+
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

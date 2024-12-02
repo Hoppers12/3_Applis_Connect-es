@@ -47,11 +47,13 @@ public class Program
                                 // Récupération de tab_result
                                 var tabResult = data.tab_result.ToObject<List<object>>();
                                 int result1 = Convert.ToInt32(tabResult[0]);
-                                bool isPair = Convert.ToBoolean(tabResult[1]);
-                                bool isPremier = Convert.ToBoolean(tabResult[2]);
-                                bool isParfait = Convert.ToBoolean(tabResult[3]);
+                                int val1 = Convert.ToInt32(tabResult[1]);
+                                int val2 = Convert.ToInt32(tabResult[2]);
+                                bool isPair = Convert.ToBoolean(tabResult[3]);
+                                bool isPremier = Convert.ToBoolean(tabResult[4]);
+                                bool isParfait = Convert.ToBoolean(tabResult[5]);
 
-                                Console.WriteLine($"Result: {result1}, IsPair: {isPair}, IsPremier: {isPremier}, IsParfait: {isParfait}");
+                                Console.WriteLine($"Result: {result1},val1 {val1}, val2 {val2} IsPair: {isPair}, IsPremier: {isPremier}, IsParfait: {isParfait}");
 
                                 using (var scope = app.ApplicationServices.CreateScope())
                                 {
@@ -62,6 +64,8 @@ public class Program
                                 var result = new BDD.Models.Result
                                 {
                                     ComputedResult = result1,  // Le résultat du calcul
+                                    val1 = val1,
+                                    val2=val2,
                                     IsPair = isPair,          // Ajout de la vérification si le nombre est pair
                                     IsPremier = isPremier,    // Ajout de la vérification si le nombre est premier
                                     IsParfait = isParfait,    // Ajout de la vérification si le nombre est parfait
