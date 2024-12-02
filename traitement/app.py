@@ -7,9 +7,6 @@ app = Flask(__name__)
 # Activer CORS pour toutes les routes
 CORS(app)
 
-last_result = None
-match_found = False
-
 
 @app.route('/compute', methods=['POST'])
 #Fonction qui fait le calcul et l'envoie au C# pour stockage
@@ -23,31 +20,19 @@ def compute():
 
             num1 = request.form.get('num1', type=int)  # Récupérer les données envoyées
             num2 = request.form.get('num2', type=int)
-
-            # Vérifier sinum1 et num2 pr éviter de refaire les calculs si ça existe déjà
-            match_found = False
             value_compute = 0
-            for item in resultats2_data:
-                if (item["val1"] == num1 and item["val2"] == num2) or (item["val1"] == num2 and item["val2"] == num1):
-                    match_found = True
-                    #Resultat du calcul qui a déja été réalisé
-                    value_compute = item['ComputedResult']
-                    print('value computed : ', item['ComputedResult'], value_compute)
-                    break
+
+            match_found, value_compute = matchFound(resultats2_data,num1,num2)
+            print("m" , match_found,value_compute)
 
             #Si correspondance on ne refait pas les calculs
             if match_found:
                 return jsonify({"result": str(value_compute) + " (calcul déjà stocké en base)"})            
             #Sinon on fait tout et on envoie à l'interface BDD
             else :
-                result = num1 + num2  
-                last_result = result
-                isPair = testPair(result)
-                isPremier = testPremier(result)
-                isParfait = testParfait(result)
-                tab_result = [result,num1, num2,isPair,isPremier,isParfait]
-                
-                print("tab result" ,tab_result)
+
+                tab_result =calculProjet(num1,num2)
+                print("tab : ", tab_result)
                 # Envoi du résultat au service C#
                 csharp_endpoint = "http://127.0.0.1:5225/receive_result"  
                 payload = {"tab_result": tab_result}
@@ -62,12 +47,34 @@ def compute():
                 
                 except requests.exceptions.RequestException as e:
 
-                    return jsonify({"result": result, "csharp_status": f"Failed to send: {str(e)}"}), 500
+                    return jsonify({"result": tab_result, "csharp_status": f"Failed to send: {str(e)}"}), 500
 
                 except Exception as e:
                     return jsonify({"error": f"Problème lors du chargement des données JSON : {str(e)}"}), 400
                    
 
+#Fonction qui retourne true si le calcul est présent dans le datas sinon false + le resultat associé
+def matchFound(datas,num1,num2):
+    match_found = False
+    value_compute = 0
+    for item in datas:
+        if (item["val1"] == num1 and item["val2"] == num2) or (item["val1"] == num2 and item["val2"] == num1):
+            match_found = True
+            #Resultat du calcul qui a déja été réalisé
+            value_compute = item['ComputedResult']
+            print('value computed : ', item['ComputedResult'], value_compute)
+    return match_found, value_compute
+
+
+#S'occupe de la logique des calculs et retourne un tableau contenant tt les résultats
+def calculProjet(num1,num2):
+    result = num1 + num2  
+    isPair = testPair(result)
+    isPremier = testPremier(result)
+    isParfait = testParfait(result)
+    tab_result = [result,num1, num2,isPair,isPremier,isParfait]
+
+    return tab_result
 
 
 
