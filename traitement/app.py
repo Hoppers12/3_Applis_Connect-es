@@ -72,10 +72,10 @@ def calculProjet(num1,num2):
     isPair = testPair(result)
     isPremier = testPremier(result)
     isParfait = testParfait(result)
-    syracuse = syracuse(result)
+    syracuse_seq = syracuse(result)
     tab_result = [result,num1, num2,isPair,isPremier,isParfait]
 
-    return tab_result, syracuse
+    return tab_result, syracuse_seq
 
 
 #Fonction qui retourne la séquence de syracuse pour une valeur x
