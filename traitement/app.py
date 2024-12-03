@@ -30,9 +30,9 @@ def compute():
                 return jsonify({"result": str(value_compute) + " (calcul déjà stocké en base)"})            
             #Sinon on fait tout et on envoie à l'interface BDD
             else :
-
-                tab_result =calculProjet(num1,num2)
-                print("tab : ", tab_result)
+                
+                #On récupère les differents résultats de calcul sous forme de tab (Sauf syracuse car on lui reserve un traitemetn spécial)
+                tab_result, syracuse =calculProjet(num1,num2)   
                 # Envoi du résultat au service C#
                 csharp_endpoint = "http://127.0.0.1:5225/receive_result"  
                 payload = {"tab_result": tab_result}
@@ -72,10 +72,23 @@ def calculProjet(num1,num2):
     isPair = testPair(result)
     isPremier = testPremier(result)
     isParfait = testParfait(result)
+    syracuse = syracuse(result)
     tab_result = [result,num1, num2,isPair,isPremier,isParfait]
 
-    return tab_result
+    return tab_result, syracuse
 
+
+#Fonction qui retourne la séquence de syracuse pour une valeur x
+def syracuse(x):
+    sequence = [x]
+    while x != 1:
+        if x % 2 == 0:  # Si x est pair
+            x = x // 2
+        else:  # Si x est impair
+            x = 3 * x + 1
+        sequence.append(x)
+
+    return sequence
 
 
 def testParfait(nombre):
