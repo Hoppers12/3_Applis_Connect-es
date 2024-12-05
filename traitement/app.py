@@ -4,9 +4,16 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 CORS(app)
+
+@app.route('/')
+def home():
+    return "Bienvenue sur la page d'accueil!"
+
+
 #Fonction qui s'occupe des calculs et d'aiguiller vers le bonnes fonctions
-@app.route('/compute', methods=['POST'])
+@app.route('/compute')
 def compute():
+    print('compute lancé')
     if request.method == 'POST':
         resultats2 = get_results_from_csharp()
         resultats2_data = resultats2.get_json() if hasattr(resultats2, "get_json") else {}
@@ -23,7 +30,7 @@ def compute():
             tab_result, syracuse = calculProjet(num1, num2)
             send_numbers_to_csharp(syracuse)
 
-            csharp_endpoint = "http://127.0.0.1:5225/receive_result"
+            csharp_endpoint = "http://bdd:5225/receive_result"
             payload = {"tab_result": tab_result}
 
             try:
@@ -38,7 +45,7 @@ def compute():
 
 #Fonction qui envoie la suite de syracuse à l'api C#
 def send_numbers_to_csharp(numbers):
-    url = "http://127.0.0.1:5225/upload_numbers"
+    url = "http://bdd:5225/upload_numbers"
     payload = numbers
 
     try:
@@ -99,7 +106,7 @@ def testPair(valeur):
 #Fonction qui récupère les résultats venant de l'api c#
 @app.route('/get-results-from-csharp', methods=['GET'])
 def get_results_from_csharp():
-    url = "http://127.0.0.1:5225/get_results"
+    url = "http://bdd:5225/get_results"
 
     try:
         response = requests.get(url)
@@ -110,5 +117,8 @@ def get_results_from_csharp():
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Erreur lors de la récupération des résultats : {str(e)}"}), 500
 
+
+
+# Dernière ligne : démarrer l'application Flask
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

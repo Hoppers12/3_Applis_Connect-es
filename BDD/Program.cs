@@ -45,6 +45,12 @@ public partial class Program
 
                     app.UseEndpoints(endpoints =>
                     {
+                        // Endpoint pour la racine
+                        endpoints.MapGet("/", async context =>
+                        {
+                            await context.Response.WriteAsync("Je suis la racine");
+                        });
+                       
                         // Endpoints qui permet d'ajouter la suite de syracuse dans un bucket s3
                         endpoints.MapPost("/upload_numbers", async context =>
                         {

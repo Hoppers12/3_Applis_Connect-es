@@ -11,6 +11,35 @@ services:
       - 'minio:/data/minio'
     command: 'minio server /data/minio --console-address ":8900"'
 
+  traitement:
+    build:
+      context: ./traitement
+    ports:
+      - '5000:5000'
+    networks:
+      - monreseau
+
+
+  bdd:
+    build:
+      context: ./BDD
+    ports:
+      - "5225:5225"
+    networks:
+      - monreseau
+
+  frontend:
+    build:
+      context: ./front
+    ports:
+      - "8080:80"
+    networks:
+      - monreseau
+
 volumes:
   minio:
     driver: local
+
+networks:
+  monreseau:
+    driver: bridge
