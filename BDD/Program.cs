@@ -30,10 +30,10 @@ public partial class Program
                         var configuration = sp.GetRequiredService<IConfiguration>();
                         var minioConfig = configuration.GetSection("Minio");
                         return new MinioService(
-                            minioConfig["Endpoint"],
-                            minioConfig["AccessKey"],
-                            minioConfig["SecretKey"],
-                            minioConfig["BucketName"]);
+                            minioConfig["Endpoint"]!,
+                            minioConfig["AccessKey"]!,
+                            minioConfig["SecretKey"]!,
+                            minioConfig["BucketName"]!);
                     });
 
                     // Configuration du DbContext pour SQL Server
@@ -47,32 +47,61 @@ public partial class Program
 
                     app.UseEndpoints(endpoints =>
                     {
-                        // Endpoint pour téléverser une liste de nombres dans MinIO
-                        endpoints.MapPost("/upload_numbers", async context =>
+                        // Endpoint pour téléverser une liste de nombres dans MinIO (syracuse ici)
+            endpoints.MapPost("/upload_numbers", async context =>
+                {
+                    Console.WriteLine("Entrée dans l'endpoint /upload_numbers");
+                    try
+                    {
+                        // Étape 1 : Lire le corps de la requête
+                        Console.WriteLine("[DEBUG] Lecture du corps de la requête...");
+                        var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
+                        Console.WriteLine($"[DEBUG] Contenu brut du body : {body}");
+
+                        // Étape 2 : Désérialiser en liste d'entiers
+                        var numbers = JsonConvert.DeserializeObject<List<int>>(body);
+                        Console.WriteLine($"[DEBUG] Nombres désérialisés : {string.Join(", ", numbers ?? new List<int>())}");
+
+                        // Étape 3 : Validation de la liste
+                        if (numbers == null || numbers.Count == 0)
                         {
-                            try
-                            {
-                                // Résolution du service MinioService
-                                var minioService = context.RequestServices.GetRequiredService<MinioService>();
+                            Console.WriteLine("[ERREUR] Liste de nombres vide ou invalide.");
+                            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                            await context.Response.WriteAsync("La liste des nombres est vide ou invalide.");
+                            return;
+                        }
 
-                                // Génération de la liste de nombres
-                                List<int> numbers = new List<int> { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+                        // Étape 4 : Générer un nom unique pour l'objet
+                        var uniqueId = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");  // Utilise la date et l'heure actuelle pour générer un identifiant unique
+                        string objectName = $"numbers_list_{uniqueId}";  // Exemple : "numbers_list_20241205123045999"
 
-                                // Nom de l'objet dans le bucket
-                                string objectName = "numbers_list";
+                        // Étape 5 : Utiliser le service MinIO pour téléverser les données
+                        var minioService = context.RequestServices.GetRequiredService<MinioService>();
+                        Console.WriteLine("[DEBUG] Téléversement des données dans MinIO...");
+                        await minioService.UploadNumbersDirectAsync(objectName, numbers);
+                        Console.WriteLine("[DEBUG] Téléversement réussi.");
 
-                                // Téléversement dans MinIO
-                                await minioService.UploadNumbersDirectAsync(objectName, numbers);
+                        // Réponse OK
+                        context.Response.StatusCode = (int)HttpStatusCode.OK;
+                        await context.Response.WriteAsync($"Suite de nombres téléversée avec succès ! Nom de l'objet : {objectName}");
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        // Spécifique aux erreurs de désérialisation
+                        Console.WriteLine($"[ERREUR] Erreur de désérialisation JSON : {jsonEx.Message}");
+                        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        await context.Response.WriteAsync("Erreur de format JSON : " + jsonEx.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Erreurs générales
+                        Console.WriteLine($"[ERREUR] Erreur lors du téléversement : {ex.Message}");
+                        Console.WriteLine(ex.StackTrace);
+                        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        await context.Response.WriteAsync($"Erreur interne du serveur : {ex.Message}");
+                    }
+                });
 
-                                context.Response.StatusCode = (int)HttpStatusCode.OK;
-                                await context.Response.WriteAsync("Suite de nombres téléversée avec succès !");
-                            }
-                            catch (Exception ex)
-                            {
-                                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                                await context.Response.WriteAsync($"Erreur : {ex.Message}");
-                            }
-                        });
 
                         // Endpoint pour recevoir et sauvegarder un résultat
                         endpoints.MapPost("/receive_result", async context =>

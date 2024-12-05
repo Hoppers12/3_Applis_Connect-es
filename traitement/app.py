@@ -23,18 +23,20 @@ def compute():
             value_compute = 0
 
             match_found, value_compute = matchFound(resultats2_data,num1,num2)
-            print("m" , match_found,value_compute)
 
             #Si correspondance on ne refait pas les calculs
             if match_found:
                 return jsonify({"result": str(value_compute) + " (calcul déjà stocké en base)"})            
             #Sinon on fait tout et on envoie à l'interface BDD
             else :
-                
                 #On récupère les differents résultats de calcul sous forme de tab (Sauf syracuse car on lui reserve un traitemetn spécial)
-                tab_result, syracuse =calculProjet(num1,num2)   
+                tab_result, syracuse =calculProjet(num1,num2)  
+
+                #Envoie de la suite de syracuse ds le bucket 
+                send_numbers_to_csharp(syracuse)
+                
                 # Envoi du résultat au service C#
-                csharp_endpoint = "http://127.0.0.1:5225/receive_result"  
+                csharp_endpoint = "http://127.0.0.1:5225/receive_result" 
                 payload = {"tab_result": tab_result}
                 
                 try:
@@ -52,6 +54,39 @@ def compute():
                 except Exception as e:
                     return jsonify({"error": f"Problème lors du chargement des données JSON : {str(e)}"}), 400
                    
+
+#fo,nction  qui envoie la suite de syracuse à l'api C#
+def send_numbers_to_csharp(numbers):
+    print(f"[DEBUG] Début de l'exécution de send_numbers_to_csharp avec numbers = {numbers}")
+    
+    # URL de l'endpoint C# pour télécharger les nombres dans le bucket MinIO
+    url = "http://127.0.0.1:5225/upload_numbers"  # Remplacez par l'URL de votre endpoint
+    print(f"[DEBUG] URL cible pour la requête POST : {url}")
+
+    # Préparez les données à envoyer
+    payload = numbers
+    print(f"[DEBUG] Payload préparé pour l'envoi : {payload}")
+
+    try:
+        # Envoi de la requête POST avec les données JSON
+        response = requests.post(url, json=payload)
+        print(f"[DEBUG] Requête POST envoyée. Statut HTTP reçu : {response.status_code}")
+
+        # Vérification si la requête a réussi
+        response.raise_for_status()  # Déclenche une exception si la réponse n'est pas OK (code 200)
+        
+        # Traitement de la réponse du serveur
+        if response.status_code == 200:
+            print("[DEBUG] Succès ! La séquence de nombres a été envoyée et stockée.")
+        else:
+            print(f"[ERREUR] Code de statut inattendu : {response.status_code}")
+            print(f"[ERREUR] Détails de la réponse : {response.text}")  # Affiche le message d'erreur du serveur
+    
+    except requests.exceptions.RequestException as e:
+        print(f"[ERREUR] Erreur lors de l'envoi de la requête : {str(e)}")
+
+
+
 
 #Fonction qui retourne true si le calcul est présent dans le datas sinon false + le resultat associé
 def matchFound(datas,num1,num2):
