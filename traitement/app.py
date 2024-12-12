@@ -7,13 +7,27 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return "Bienvenue sur la page d'accueil!"
+            try:
+                print("je suis rentré dans / de traitement")
+                # Faire la requête GET
+                response = requests.get("http://bdd:5225")
+
+                # Vérifier si la requête a réussi (status code 200)
+                if response.status_code == 200:
+                    return response.text
+                else:
+                    return (f"Erreur HTTP : {response.status_code}")
+
+            except requests.exceptions.RequestException as e:
+                # Capture toute exception liée à la requête et affiche l'erreur
+                return (f"Une erreur s'est produite : {str(e)}")
+
 
 
 #Fonction qui s'occupe des calculs et d'aiguiller vers le bonnes fonctions
-@app.route('/compute')
+@app.route('/compute', methods=['POST'])
 def compute():
-    print('compute lancé')
+    print("Je suis rentré dans compute")
     if request.method == 'POST':
         resultats2 = get_results_from_csharp()
         resultats2_data = resultats2.get_json() if hasattr(resultats2, "get_json") else {}
@@ -34,14 +48,18 @@ def compute():
             payload = {"tab_result": tab_result}
 
             try:
+            
                 response = requests.post(csharp_endpoint, json=payload)
                 response.raise_for_status()
+                
 
                 return jsonify({"result": tab_result[0], "csharp_status": "Success"})
             except requests.exceptions.RequestException as e:
                 return jsonify({"result": tab_result, "csharp_status": f"Failed to send: {str(e)}"}), 500
             except Exception as e:
                 return jsonify({"error": f"Problème lors du chargement des données JSON : {str(e)}"}), 400
+    else :
+        return "contacte moi en post"
 
 #Fonction qui envoie la suite de syracuse à l'api C#
 def send_numbers_to_csharp(numbers):

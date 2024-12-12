@@ -1,23 +1,21 @@
-# Étape 1 : Image de build
+# Utiliser l'image SDK pour compiler et exécuter l'application
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /app
 
-# Copier les fichiers de projet et restaurer les dépendances
-COPY *.csproj ./
-RUN dotnet restore
+# Copier le projet et tout le code source
+COPY . .
 
-# Copier tout le code source et exécuter le build
-COPY . ./
-RUN dotnet build "BDD.csproj" -c Debug -o /app/build /p:Platform="AnyCPU"
+# Restaurer les dépendances et publier l'application
+RUN dotnet publish "BDD.csproj" -c Release -o /publish
 
-# Étape 2 : Image runtime
+# Utiliser l'image runtime pour exécuter l'application
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Copier les fichiers compilés depuis l'étape de build
-COPY --from=build /app/build .
+# Copier les fichiers publiés depuis l'étape précédente
+COPY --from=build /publish .
 
-# Expose le port utilisé par l'application
+# Exposer le port utilisé par l'application
 EXPOSE 5225
 
 # Commande pour démarrer l'application

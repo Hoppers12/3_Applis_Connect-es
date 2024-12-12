@@ -10,6 +10,8 @@ services:
     volumes:
       - 'minio:/data/minio'
     command: 'minio server /data/minio --console-address ":8900"'
+    networks:
+      - monreseau
 
   traitement:
     build:
@@ -28,6 +30,20 @@ services:
     networks:
       - monreseau
 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Password123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    networks:
+      - monreseau
+
+
   frontend:
     build:
       context: ./front
@@ -39,6 +55,7 @@ services:
 volumes:
   minio:
     driver: local
+  sql_data:
 
 networks:
   monreseau:

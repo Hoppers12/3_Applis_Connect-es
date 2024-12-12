@@ -21,7 +21,10 @@ public partial class Program
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
+    
             {
+                webBuilder.UseUrls("http://0.0.0.0:5225");
+
                 webBuilder.ConfigureServices(services =>
                 {
                     services.AddSingleton<MinioService>(sp =>
@@ -36,7 +39,7 @@ public partial class Program
                     });
 
                     services.AddDbContext<ResultsDbContext>(options =>
-                        options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ResultsDb;Trusted_Connection=True;"));
+                        options.UseSqlServer("Server=sqlserver,1433;Database=ResultsDb;User Id=sa;Password=YourStrong!Password123;"));
                 });
 
                 webBuilder.Configure(app =>

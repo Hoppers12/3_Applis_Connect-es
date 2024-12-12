@@ -76,13 +76,24 @@
             const data = new FormData();
             data.append("num1", num1);
             data.append("num2", num2);
+            
+            try {
+                const test = await fetch("http://localhost:5000/")
+                data = await  test.text()
+                console.log(data)
+            
+            } catch (error) {
+                console.error("Erreur lors du test:", error);
 
+            }
+                
             try {
                 // Envoyer les données 
-                const response = await fetch("http://traitement:5000/compute", {
+                const response = await fetch("http://localhost:5000/compute", {
                     method: "POST",
                     body: data,
-                });
+                }); 
+
 
                 if (!response.ok) {
                     throw new Error("Erreur lors de l'envoi des données.");
@@ -90,7 +101,7 @@
 
                 // Attendre la réponse JSON
                 const resultData = await response.json();
-
+                console.log("Requête bien envoyé")
                 // Afficher le résultat du calcul dans la page
                 const resultContainer = document.getElementById("lastResult");
                 resultContainer.classList.remove('success', 'error'); // Réinitialiser les classes
