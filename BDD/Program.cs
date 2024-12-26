@@ -40,6 +40,7 @@ public partial class Program
 
                     services.AddDbContext<ResultsDbContext>(options =>
                         options.UseSqlServer("Server=sqlserver,1433;Database=ResultsDb;User Id=sa;Password=YourStrong!Password123;"));
+
                 });
 
                 webBuilder.Configure(app =>
@@ -52,6 +53,35 @@ public partial class Program
                         endpoints.MapGet("/", async context =>
                         {
                             await context.Response.WriteAsync("Je suis la racine");
+                        });
+
+                        // Endpoint pour vérifier la connexion avec la base de données
+                        endpoints.MapGet("/check_db_connection", async context =>
+                        {
+                            try
+                            {
+                                using (var scope = app.ApplicationServices.CreateScope())
+                                {
+                                    var dbContext = scope.ServiceProvider.GetRequiredService<ResultsDbContext>();
+                                    var canConnect = await dbContext.Database.CanConnectAsync();
+
+                                    if (canConnect)
+                                    {
+                                        context.Response.StatusCode = (int)HttpStatusCode.OK;
+                                        await context.Response.WriteAsync("Connexion à la base de données réussie.");
+                                    }
+                                    else
+                                    {
+                                        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                                        await context.Response.WriteAsync("Impossible de se connecter à la base de données.");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                                await context.Response.WriteAsync($"Erreur lors de la vérification de la connexion à la base de données : {ex.Message}");
+                            }
                         });
                        
                         // Endpoints qui permet d'ajouter la suite de syracuse dans un bucket s3

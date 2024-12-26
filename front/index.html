@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculatrice de Résultat</title>
+    <title>Calculatrice de Résultats</title>
 
     <!-- Import Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -66,59 +66,71 @@
 
     <script>
         async function submitForm(event) {
-            event.preventDefault();  // Empêche le rechargement de la page
+    event.preventDefault();
 
-            // Récupérer les valeurs du formulaire
-            const num1 = document.getElementById("num1").value;
-            const num2 = document.getElementById("num2").value;
+    const num1 = document.getElementById("num1").value;
+    const num2 = document.getElementById("num2").value;
 
-            // Créer l'objet pour les données à envoyer
-            const data = new FormData();
-            data.append("num1", num1);
-            data.append("num2", num2);
-            
-            try {
-                const test = await fetch("http://localhost:5000/")
-                data = await  test.text()
-                console.log(data)
-            
-            } catch (error) {
-                console.error("Erreur lors du test:", error);
+    const data = new FormData();
+    data.append("num1", num1);
+    data.append("num2", num2);
 
-            }
-                
-            try {
-                // Envoyer les données 
-                const response = await fetch("http://localhost:5000/compute", {
-                    method: "POST",
-                    body: data,
-                }); 
+    // Fonction pour un fetch avec timeout
+    const fetchWithTimeout = (url, options, timeout = 10000) => {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("Timeout exceeded")), timeout);
+            fetch(url, options)
+                .then(response => {
+                    clearTimeout(timer);
+                    resolve(response);
+                })
+                .catch(err => {
+                    clearTimeout(timer);
+                    reject(err);
+                });
+        });
+    };
+
+    const simulateDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    try {
+        const spinner = document.getElementById("loadingSpinner");
+        spinner.style.display = "block"; // Affiche le spinner
 
 
-                if (!response.ok) {
-                    throw new Error("Erreur lors de l'envoi des données.");
-                }
+        const response = await fetchWithTimeout("http://localhost:5000/compute", {
+            method: "POST",
+            body: data,
+        }, 10000); // Timeout défini à 10 secondes
 
-                // Attendre la réponse JSON
-                const resultData = await response.json();
-                console.log("Requête bien envoyé")
-                // Afficher le résultat du calcul dans la page
-                const resultContainer = document.getElementById("lastResult");
-                resultContainer.classList.remove('success', 'error'); // Réinitialiser les classes
-
-                if (resultData.result !== undefined) {
-                    resultContainer.innerHTML = `Le résultat est : <strong>${resultData.result}</strong>`;
-                    resultContainer.classList.add('success');
-                } else {
-                    resultContainer.innerHTML = "Erreur lors du calcul.";
-                    resultContainer.classList.add('error');
-                }
-
-            } catch (error) {
-                console.error("Erreur:", error);
-                document.getElementById("lastResult").innerText = "Erreur lors de l'envoi des données.";
-            }
+        if (!response.ok) {
+            throw new Error("Erreur lors de l'envoi des données.");
         }
+
+        const resultData = await response.json();
+        const resultContainer = document.getElementById("lastResult");
+        resultContainer.classList.remove('success', 'error');
+
+        if (resultData.ispair !== undefined) {
+            resultContainer.innerHTML = `Le résultat est : <strong>${resultData.result} / pair : ${resultData.ispair} / premier : ${resultData.ispremier} / parfait : ${resultData.isparfait} /  valeur trouvé dans la bdd : ${resultData.dejastocke}</strong> La suite de syracuse correspondante est disponible dans le BucketS3`;
+            resultContainer.classList.add('success');
+        } else {
+            resultContainer.innerHTML = "Erreur lors du calcul.";
+            resultContainer.classList.add('error');
+        }
+
+    } catch (error) {
+        console.error("Erreur:", error);
+        const resultContainer = document.getElementById("lastResult");
+        resultContainer.classList.remove('success');
+        resultContainer.classList.add('error');
+        resultContainer.innerText = error.message || "Erreur lors de l'envoi des données.";
+    } finally {
+        const spinner = document.getElementById("loadingSpinner");
+        spinner.style.display = "none"; // Cache le spinner après le traitement
+    }
+}
+
     </script>
 </head>
 <body>
@@ -146,7 +158,10 @@
                 </form>
             </div>
         </div>
-
+        <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+        
         <!-- Résultat -->
         <div id="lastResult" class="result mt-4">
             Résultat :
